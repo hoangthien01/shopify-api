@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import compression from 'compression';
+import cors from 'cors';
 import { middleware as expressCtx } from 'express-ctx';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
@@ -25,6 +26,11 @@ export async function bootstrap(): Promise<NestExpressApplication> {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(), {
         cors: true
     });
+    // app.enableCors({
+    //     allowedHeaders: ['content-type'],
+    //     origin: ['https://blood-donation-web.vercel.app', 'http://localhost:4200'],
+    //     credentials: true
+    // });
 
     app.setGlobalPrefix('/api', { exclude: [{ path: '/manifest/:startUrl', method: RequestMethod.GET }] });
     app.enable('trust proxy');
@@ -47,7 +53,7 @@ export async function bootstrap(): Promise<NestExpressApplication> {
         new ValidationPipe({
             whitelist: true,
             transform: true,
-            forbidNonWhitelisted: true,
+            forbidNonWhitelisted: false,
             transformOptions: {
                 enableImplicitConversion: true
             }

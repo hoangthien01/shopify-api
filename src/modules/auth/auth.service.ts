@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Auth } from 'googleapis';
 import { google } from 'googleapis';
@@ -7,15 +7,14 @@ import verifyAppleToken from 'verify-apple-id-token';
 
 import { validateHash } from '../../common/utils';
 import type { UserRole } from '../../constants';
-import { EmailTemplate, RegisterMethod, TimeExpression, Token } from '../../constants';
+import { EmailTemplate, TimeExpression, Token } from '../../constants';
 import { ApiConfigService } from '../../shared/services/api-config.service';
 import { AwsSESService } from '../../shared/services/email-services/aws-ses.service';
 import { NodemailerService } from '../../shared/services/email-services/nodemailer.service';
 import type { ResetPasswordDto } from '../users/dto';
 import type { User } from '../users/entities';
 import { UsersService } from '../users/users.service';
-import type { UserRegisterDto } from './dto';
-import { LoginPayloadDto } from './dto';
+import type { ForgotPasswordDto } from './dto/request/forgot-password.dto';
 import type { OTPDto } from './dto/request/otp.dto';
 import type { UserLoginDto } from './dto/request/user-login.dto';
 import { TokenPayloadDto } from './dto/response/token-payload.dto';
@@ -59,13 +58,13 @@ export class AuthService {
     }
 
     async validateUser(userLoginDto: UserLoginDto): Promise<User> {
-        const user = await this.usersService.getUserByEmail(userLoginDto.email);
+        const user = await this.usersService.getUserByIdentifier(userLoginDto.identifier);
 
         if (!user) {
-            throw new NotFoundException();
+            throw new BadRequestException();
         }
 
-        const isPasswordValid = await validateHash(userLoginDto.password, user?.password);
+        const isPasswordValid = await validateHash(userLoginDto.password, user.password);
 
         if (!isPasswordValid) {
             throw new UnauthorizedException();
@@ -74,30 +73,32 @@ export class AuthService {
         return user;
     }
 
-    async forgotPassword(email: string) {
-        const user = await this.usersService.findByIdOrEmail({
-            email,
-            registerType: RegisterMethod.REGISTER
+    async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<string> {
+        const user = await this.usersService.findByIdentifierAndPhone({
+            identifier: forgotPasswordDto.identifier,
+            phone: forgotPasswordDto.phone
         });
 
         totp.options = {
             digits: 6,
             step: 600
         };
-
-        const otpCode = totp.generate(email);
+        // eslint-disable-next-line no-console
+        const otpCode = totp.generate(String(user.identifier));
         await this.nodemailerService.sendMailNodeMailer(
             EmailTemplate.FORGOT_PASSWORD_OTP_EMAIL,
             {
                 subject: {},
                 message: {
                     email: user.email,
+                    // identifier: String(user.identifier),
                     otpCode
                 }
             },
-            [email]
+            [user.email]
         );
-        // return otpCode
+
+        return user.email;
     }
 
     async verifyGoogleUser(token: string) {
@@ -120,11 +121,11 @@ export class AuthService {
     }
 
     async verifyOTP(dto: OTPDto): Promise<User> {
-        const user = await this.usersService.findByIdOrEmail({
-            email: dto.email
+        const user = await this.usersService.findByIdentifierAndPhone({
+            identifier: dto.identifier
         });
 
-        if (!totp.check(dto.otpCode, dto.email)) {
+        if (!totp.check(dto.otpCode, String(dto.identifier))) {
             throw new BadRequestException('Invalid OTP');
         }
 
@@ -135,41 +136,38 @@ export class AuthService {
         return this.usersService.resetPassword(resetPasswordDto);
     }
 
-    async googleAppleAuthentication(
-        email: string,
-        _ip: string,
-        registerType: RegisterMethod
-    ): Promise<LoginPayloadDto> {
-        const user = await this.usersService.getUserByEmail(email);
+    // async googleAppleAuthentication(
+    //     email: string,
+    //     _ip: string,
+    //     registerType: RegisterMethod
+    // ): Promise<LoginPayloadDto> {
+    //     const user = await this.usersService.getUserByEmail(email);
 
-        if (!user) {
-            const createUserDto: UserRegisterDto = {
-                email
-            };
+    //     if (!user) {
+    //         const createUserDto: UserRegisterDto = {
+    //             email,
+    //         };
+    //         const userDto = await this.usersService.createUser(
+    //             createUserDto,
+    //             registerType,
+    //             _ip === '::1' ? '14.245.167.9' : _ip
+    //         );
+    //         const token = await this.createAccessToken({
+    //             userId: userDto.id,
+    //             role: userDto.role
+    //         });
+    //         await this.usersService.updateLastLogin(userDto.id);
 
-            const userDto = await this.usersService.createUser(
-                createUserDto,
-                registerType,
-                _ip === '::1' ? '14.245.167.9' : _ip
-            );
+    //         return new LoginPayloadDto(userDto, token);
+    //     }
 
-            const token = await this.createAccessToken({
-                userId: userDto.id,
-                role: userDto.role
-            });
+    //     const loginToken = await this.createAccessToken({
+    //         userId: user.id,
+    //         role: user.role
+    //     });
 
-            await this.usersService.updateLastLogin(userDto.id);
+    //     await this.usersService.updateLastLogin(user.id);
 
-            return new LoginPayloadDto(userDto, token);
-        }
-
-        const loginToken = await this.createAccessToken({
-            userId: user.id,
-            role: user.role
-        });
-
-        await this.usersService.updateLastLogin(user.id);
-
-        return new LoginPayloadDto(user.toResponseDto(), loginToken);
-    }
+    //     return new LoginPayloadDto(user.toResponseDto(), loginToken);
+    // }
 }

@@ -23,13 +23,13 @@ function groupRows<T>(rawResults: T[], alias: Alias, driver: Driver): Map<string
     if (alias.metadata.tableType === 'view') {
         keys.push(
             ...alias.metadata.columns.map((column) =>
-                DriverUtils.buildAlias(driver, alias.name, column.databaseName)
+                DriverUtils.buildAlias(driver, undefined, alias.name, column.databaseName)
             )
         );
     } else {
         keys.push(
             ...alias.metadata.primaryColumns.map((column) =>
-                DriverUtils.buildAlias(driver, alias.name, column.databaseName)
+                DriverUtils.buildAlias(driver, undefined, alias.name, column.databaseName)
             )
         );
     }
@@ -169,7 +169,7 @@ SelectQueryBuilder.prototype.paginate = async function (
     const group = groupRows(raw, alias, this.connection.driver);
 
     const keys = alias.metadata.primaryColumns.map((column) =>
-        DriverUtils.buildAlias(this.connection.driver, alias.name, column.databaseName)
+        DriverUtils.buildAlias(this.connection.driver, undefined, alias.name, column.databaseName)
     );
 
     for (const rawValue of raw) {

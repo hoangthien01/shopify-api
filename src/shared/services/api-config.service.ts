@@ -96,6 +96,7 @@ export class ApiConfigService {
             subscribers: [UserSubscriber, SubscriptionTransactionSubscriber],
             synchronize: this.isDevelopment ? true : false,
             migrationsRun: true,
+            ssl: true,
             logging: this.getBoolean('ENABLE_ORM_LOGS'),
             namingStrategy: new SnakeNamingStrategy()
         };

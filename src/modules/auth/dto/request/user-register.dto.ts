@@ -1,6 +1,6 @@
 import { Matches, MinLength } from 'class-validator';
 
-import { EmailField, StringField } from '../../../../decorators';
+import { EmailField, NumberField, StringField } from '../../../../decorators';
 
 export class UserRegisterDto {
     @EmailField({ toLowerCase: true, example: 'user@vstation.com' })
@@ -9,7 +9,16 @@ export class UserRegisterDto {
     })
     readonly email: string;
 
-    @StringField({ minLength: 8, example: 'vStation@123' })
+    @NumberField({ minLength: 9, maxLength: 12, example: '206271224' })
+    readonly identifier: number;
+
+    @NumberField({ minLength: 9, maxLength: 12, example: '1213232313' })
+    readonly phone: number;
+
+    @StringField({ example: 'ThienHo' })
+    readonly name: string;
+
+    @StringField({ minLength: 8, example: 'vStation@123', default: 'ThienHo1204@' })
     @MinLength(8)
     readonly password?: string;
 }

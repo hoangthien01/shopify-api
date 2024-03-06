@@ -18,6 +18,8 @@ import type {
     GetFilterUserDto,
     ResetPasswordDto
 } from './dto';
+import type { UpdateUserDto } from './dto/request/update-user.dto';
+import type { DonorDto } from './dto/response/donor.dto';
 import type { UserDto } from './dto/response/user.dto';
 import type { UsersPageOptionsDto } from './dto/response/users-page-options.dto';
 import { GeographyLocation, SubscriptionTransaction, User } from './entities';
@@ -51,11 +53,27 @@ export class UsersService {
     }
 
     async getUserByEmail(email: string) {
-        return this.userRepository
-            .createQueryBuilder('user')
-            .leftJoinAndSelect('user.geography', 'geography')
-            .andWhere('user.email = :email', { email })
-            .getOne();
+        try {
+            return this.userRepository
+                .createQueryBuilder('user')
+                .leftJoinAndSelect('user.geography', 'geography')
+                .andWhere('user.email = :email', { email })
+                .getOneOrFail();
+        } catch {
+            throw new BadRequestException();
+        }
+    }
+
+    async getUserByIdentifier(identifier: number) {
+        try {
+            return this.userRepository
+                .createQueryBuilder('user')
+                .leftJoinAndSelect('user.geography', 'geography')
+                .andWhere('user.identifier = :identifier', { identifier })
+                .getOneOrFail();
+        } catch {
+            throw new BadRequestException();
+        }
     }
 
     async findByIdOrEmail(
@@ -81,10 +99,66 @@ export class UsersService {
             });
         }
 
-        const result = await queryBuilder.getOne();
+        const result = await queryBuilder.getOneOrFail();
 
         if (!result) {
             throw new NotFoundException();
+        }
+
+        return result;
+    }
+
+    async findByIdentifierOrEmail(
+        options: Partial<{ identifier: number; email: string; registerType: RegisterMethod }>
+    ): Promise<User> {
+        const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+        if (options.email) {
+            queryBuilder.where('user.email = :email', {
+                email: options.email
+            });
+        }
+
+        if (!Number.isNaN(options.identifier) && options.identifier) {
+            queryBuilder.where('user.identifier = :identifier', {
+                identifier: options.identifier
+            });
+        }
+
+        if (options.registerType) {
+            queryBuilder.andWhere('user.registerType = :registerType', {
+                registerType: options.registerType
+            });
+        }
+
+        const result = await queryBuilder.getOneOrFail();
+
+        if (!result) {
+            throw new NotFoundException();
+        }
+
+        return result;
+    }
+
+    async findByIdentifierAndPhone(options: Partial<{ identifier: number; phone: number }>): Promise<User> {
+        const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+        if (options.identifier) {
+            queryBuilder.where('user.identifier = :identifier', {
+                identifier: options.identifier
+            });
+        }
+
+        if (options.phone) {
+            queryBuilder.andWhere('user.phone = :phone', {
+                phone: options.phone
+            });
+        }
+
+        const result = await queryBuilder.getOneOrFail();
+
+        if (!result) {
+            throw new BadRequestException();
         }
 
         return result;
@@ -96,6 +170,14 @@ export class UsersService {
                 email
             },
             relations: ['geography']
+        });
+    }
+
+    async findByInvitationToken(invitationToken: string): Promise<User | null> {
+        return this.userRepository.findOne({
+            where: {
+                invitationToken
+            }
         });
     }
 
@@ -114,7 +196,7 @@ export class UsersService {
     private async handleCreateUserAccount(dto: UserRegisterDto, registerType: RegisterMethod): Promise<User> {
         const user = await this.userRepository.findOne({
             where: {
-                email: dto.email,
+                identifier: dto.identifier,
                 registerType: RegisterMethod.REGISTER
             },
             withDeleted: true
@@ -203,8 +285,8 @@ export class UsersService {
     }
 
     async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<ResponseDto> {
-        const user = await this.findByIdOrEmail({
-            email: resetPasswordDto.email
+        const user = await this.findByIdentifierAndPhone({
+            identifier: resetPasswordDto.identifier
         });
 
         if (user.registerType !== RegisterMethod.REGISTER) {
@@ -271,6 +353,16 @@ export class UsersService {
         return new ResponseDto({ message: 'Email valid' });
     }
 
+    async checkExistingIdentifier(uid: number) {
+        const result = await this.userRepository.findOne({ where: { identifier: uid }, withDeleted: true });
+
+        if (result) {
+            throw new ConflictException('Mã đinh danh đã được đăng ký với một tài khoản khác.');
+        }
+
+        return new ResponseDto({ message: 'Identifier valid' });
+    }
+
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async unsubscribe() {
         const usersExpiredSubscription = await this.subscriptionTransactionRepository
@@ -304,5 +396,24 @@ export class UsersService {
             .delete()
             .where(`((deleted_at)::date + INTERVAL '30 DAYS')::date < NOW()::date`)
             .execute();
+    }
+
+    async updateUserById(userId: string, data: UpdateUserDto) {
+        const user = await this.userRepository.findOneBy({ id: userId });
+
+        if (!user) {
+            return new NotFoundException();
+        }
+
+        await this.userRepository.update(
+            { id: userId },
+            {
+                ...data
+            }
+        );
+
+        const userRes = await this.userRepository.findOneByOrFail({ id: userId });
+
+        return userRes.toResponseDto();
     }
 }

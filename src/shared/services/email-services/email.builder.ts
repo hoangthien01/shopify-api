@@ -5,7 +5,10 @@ import _ from 'lodash';
 import type { EmailTemplateType } from '../../../constants';
 import { EmailTemplate } from '../../../constants';
 import type { IEmailParams } from '../../../interfaces/email-builder.interface';
-import { FORGOT_PASSWORD_OTP_EMAIL } from './templates';
+import { FORGOT_PASSWORD_OTP_EMAIL, USER_INVITATION } from './templates';
+import { APPROVED_REQUEST } from './templates/approved-request.template';
+import { DONATION_RESULT } from './templates/donation-result.template';
+import { PENDING_APPROVE } from './templates/pending-approve.template';
 
 @Injectable()
 export class EmailBuilder {
@@ -34,6 +37,26 @@ export class EmailBuilder {
         switch (type) {
             case EmailTemplate.FORGOT_PASSWORD_OTP_EMAIL: {
                 template = _.clone(FORGOT_PASSWORD_OTP_EMAIL);
+                break;
+            }
+
+            case EmailTemplate.USER_INVITATION: {
+                template = _.clone(USER_INVITATION);
+                break;
+            }
+
+            case EmailTemplate.PENDING_APPROVE: {
+                template = _.clone(PENDING_APPROVE);
+                break;
+            }
+
+            case EmailTemplate.APPROVED_REQUEST: {
+                template = _.clone(APPROVED_REQUEST);
+                break;
+            }
+
+            case EmailTemplate.DONATION_RESULT: {
+                template = _.clone(DONATION_RESULT);
                 break;
             }
 

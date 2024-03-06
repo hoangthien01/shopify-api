@@ -11,14 +11,14 @@ export class QueryFailedFilter implements ExceptionFilter<QueryFailedError> {
         const response = ctx.getResponse<Response>();
 
         const status =
-            exception.driverError?.routine === 'string_to_uuid'
+            exception.driverError?.name === 'string_to_uuid'
                 ? HttpStatus.BAD_REQUEST
                 : HttpStatus.INTERNAL_SERVER_ERROR;
 
         response.status(status).json({
             status,
             message:
-                exception.driverError?.routine === 'string_to_uuid'
+                exception.driverError?.name === 'string_to_uuid'
                     ? 'Uuid invalid'
                     : 'Internal Server Error',
             error: STATUS_CODES[status],

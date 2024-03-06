@@ -269,7 +269,7 @@ module.exports = {
         'no-dupe-else-if': 'error',
         'lines-between-class-members': ['error', 'always'],
         'no-console': [
-            'error',
+            'warn',
             {
                 allow: [
                     'info',

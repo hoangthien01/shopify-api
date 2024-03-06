@@ -1,0 +1,86 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-all>
+      <mj-text font-weight="400" font-size="16px" color="#000000" line-height="24px" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"></mj-text>
+    </mj-attributes>
+    <mj-style inline="inline">
+      .body-section {
+      -webkit-box-shadow: 1px 4px 11px 0px rgba(0, 0, 0, 0.15);
+      -moz-box-shadow: 1px 4px 11px 0px rgba(0, 0, 0, 0.15);
+      box-shadow: 1px 4px 11px 0px rgba(0, 0, 0, 0.15);
+      }
+    </mj-style>
+    <mj-style inline="inline">
+      .text-link {
+      color: #5e6ebf
+      }
+    </mj-style>
+    <mj-style inline="inline">
+      .footer-link {
+      color: #888888
+      }
+    </mj-style>
+
+  </mj-head>
+  <mj-body background-color="#E7E7E7" width="600px">
+
+    <mj-section background-color="#1f2e78">
+      <mj-column width="100%">
+        <mj-text color="#fff" font-size="24px" padding-bottom="40px" padding-top="40px" align="center" text-transform="uppercase">Kết quả hiến máu</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-wrapper padding-top="0" padding-bottom="0" css-class="body-section">
+      <mj-section background-color="#ffffff" padding-left="15px" padding-right="15px">
+        <mj-column width="100%">
+          <mj-text color="#637381" font-size="16px">
+            Chào <b>{{ userName }}</b>, cảm ơn bạn vì đã đến hiến máu. Dưới đây là kết quả hiến máu của bạn.
+          </mj-text>
+
+          <mj-text color="#637381" font-size="16px">
+            <b>Thông tin về đợt hiến máu</b>
+          </mj-text>
+
+          <mj-text color="#637381" font-size="16px">
+            Đơn vị tổ chức: {{ name }} <br>
+            Địa điểm: {{ address }}<br>
+            Thời gian: {{ startDate }}
+          </mj-text>
+             <mj-text color="#637381" font-size="16px">
+            <b>Kết quả hiến máu</b>
+          </mj-text>
+          <mj-text color="#637381" font-size="16px">
+            Chiều cao: {{ height }} <br>
+            Cân nặng: {{ weight }}<br>
+            Huyết áp: {{ bloodPressure }}<br>
+            Tình trạng lâm sàng: {{ clinicalStatus }} <br>
+						Ghi chú: {{ note }}<br>
+            Huyết sắc tố: {{ hemoglobin }}<br>
+            Viêm gan B: {{ hepatitisB }} <br>
+            Nhóm máu ABO: {{ aBO }}<br>
+            Nhóm máu Rh: {{ rh }}<br>
+            Kháng thể bất thường: {{ abnormalAntibodies }} <br>
+            Giang mai: {{ syphilis }}<br>
+            HBsAg: {{ hBsAg }}<br>
+            Anti-HCV: {{ antiHCV }}<br>
+            HIV Ag/Ab: {{ hivAgAb }}<br>
+            Phản ứng sau hiến máu: {{ react }}<br>
+            Phưogn thức xử lý: {{ treatmentMethod }}<br>
+          </mj-text>
+
+          <mj-text color="#637381" font-size="16px">
+            Nếu đây không phải là bạn, vui lòng bỏ qua email này. </mj-text>
+          <mj-column width="50%">
+            <mj-text color="#212b35" font-size="12px" text-transform="uppercase" font-weight="bold" padding-bottom="0">
+              Thank you <br>
+              Redirect support team.
+              </br>
+            </mj-text>
+
+          </mj-column>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+  </mj-body>
+</mjml>

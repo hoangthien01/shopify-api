@@ -29,7 +29,7 @@ import { User } from '../users/entities';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import type { TokenPayloadDto } from './dto';
-import { GoogleApplePayloadDto, LoginPayloadDto, UserLoginDto, ValidateEmailDto } from './dto';
+import { LoginPayloadDto, UserLoginDto } from './dto';
 import { ForgotPasswordDto } from './dto/request/forgot-password.dto';
 import { OTPDto } from './dto/request/otp.dto';
 import { UserRegisterDto } from './dto/request/user-register.dto';
@@ -38,6 +38,25 @@ import { UserRegisterDto } from './dto/request/user-register.dto';
 @ApiTags('auth')
 export class AuthController {
     constructor(private usersService: UsersService, private authService: AuthService) {}
+
+    @Get('reload')
+    @Auth([UserRole.ADMIN, UserRole.USER, UserRole.HOSPITAL, UserRole.COUNCIL, UserRole.EMPLOYEE])
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({
+        type: LoginPayloadDto,
+        description: 'Reload User info with access token'
+    })
+    @ApiOperation({ summary: 'Login with credentials' })
+    async reload(@AuthUser() user: User): Promise<LoginPayloadDto> {
+        const token = await this.authService.createAccessToken({
+            userId: user.id,
+            role: user.role
+        });
+
+        await this.usersService.updateLastLogin(user.id);
+
+        return new LoginPayloadDto(new UserDto(user), token);
+    }
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
@@ -66,7 +85,7 @@ export class AuthController {
     })
     @ApiOperation({ summary: 'Forgot password' })
     forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-        return this.authService.forgotPassword(forgotPasswordDto.email);
+        return this.authService.forgotPassword(forgotPasswordDto);
     }
 
     @Post('verify-otp')
@@ -86,7 +105,7 @@ export class AuthController {
 
     @Patch('reset-password')
     @HttpCode(HttpStatus.ACCEPTED)
-    @Auth([UserRole.USER, UserRole.ADMIN])
+    // @Auth([UserRole.USER, UserRole.ADMIN])
     @ApiAcceptedResponse({
         description: 'Reset password successfully'
     })
@@ -95,37 +114,37 @@ export class AuthController {
         return this.authService.resetPassword(resetPasswordDto);
     }
 
-    @Post('google')
-    @HttpCode(HttpStatus.CREATED)
-    @ApiCreatedResponse({
-        type: LoginPayloadDto,
-        description: 'Successfully Registered'
-    })
-    @ApiOperation({ summary: 'Sign in with Google' })
-    async googleSignUp(
-        @Body() googlePayloadDto: GoogleApplePayloadDto,
-        @Ip() _ip: string
-    ): Promise<LoginPayloadDto> {
-        const googleUser = await this.authService.verifyGoogleUser(googlePayloadDto.idToken);
+    // @Post('google')
+    // @HttpCode(HttpStatus.CREATED)
+    // @ApiCreatedResponse({
+    //     type: LoginPayloadDto,
+    //     description: 'Successfully Registered'
+    // })
+    // @ApiOperation({ summary: 'Sign in with Google' })
+    // async googleSignUp(
+    //     @Body() googlePayloadDto: GoogleApplePayloadDto,
+    //     @Ip() _ip: string
+    // ): Promise<LoginPayloadDto> {
+    //     const googleUser = await this.authService.verifyGoogleUser(googlePayloadDto.idToken);
 
-        return this.authService.googleAppleAuthentication(googleUser.email!, _ip, RegisterMethod.GOOGLE);
-    }
+    //     return this.authService.googleAppleAuthentication(googleUser.email!, _ip, RegisterMethod.GOOGLE);
+    // }
 
-    @Post('apple')
-    @HttpCode(HttpStatus.CREATED)
-    @ApiCreatedResponse({
-        type: LoginPayloadDto,
-        description: 'Successfully Registered'
-    })
-    @ApiOperation({ summary: 'Signup with Apple' })
-    async appleSignUp(
-        @Body() applePayloadDto: GoogleApplePayloadDto,
-        @Ip() _ip: string
-    ): Promise<LoginPayloadDto> {
-        const appleUser = await this.authService.verifyAppleUser(applePayloadDto.idToken);
+    // @Post('apple')
+    // @HttpCode(HttpStatus.CREATED)
+    // @ApiCreatedResponse({
+    //     type: LoginPayloadDto,
+    //     description: 'Successfully Registered'
+    // })
+    // @ApiOperation({ summary: 'Signup with Apple' })
+    // async appleSignUp(
+    //     @Body() applePayloadDto: GoogleApplePayloadDto,
+    //     @Ip() _ip: string
+    // ): Promise<LoginPayloadDto> {
+    //     const appleUser = await this.authService.verifyAppleUser(applePayloadDto.idToken);
 
-        return this.authService.googleAppleAuthentication(appleUser.email, _ip, RegisterMethod.APPLE);
-    }
+    //     return this.authService.googleAppleAuthentication(appleUser.email, _ip, RegisterMethod.APPLE);
+    // }
 
     @Post('register')
     @HttpCode(HttpStatus.CREATED)
@@ -133,22 +152,24 @@ export class AuthController {
         type: ResponseDto,
         description: 'Successfully Registered'
     })
-    @ApiOperation({ summary: 'Register with Email/Password' })
+    @ApiOperation({ summary: 'Register with CMND(CCCD)/Password' })
     async userRegister(@Body() dto: UserRegisterDto, @Ip() _ip: string) {
-        const userDto = await this.usersService.createUser(
-            dto,
-            RegisterMethod.REGISTER,
-            _ip === '::1' ? '14.245.167.9' : _ip
-        );
+        if (dto.identifier) {
+            const userDto = await this.usersService.createUser(
+                dto,
+                RegisterMethod.REGISTER,
+                _ip === '::1' ? '14.245.167.9' : _ip
+            );
 
-        const token = await this.authService.createAccessToken({
-            userId: userDto.id,
-            role: userDto.role
-        });
+            const token = await this.authService.createAccessToken({
+                userId: userDto.id,
+                role: userDto.role
+            });
 
-        await this.usersService.updateLastLogin(userDto.id);
+            await this.usersService.updateLastLogin(userDto.id);
 
-        return new LoginPayloadDto(userDto, token);
+            return new LoginPayloadDto(userDto, token);
+        }
     }
 
     @Version('1')
@@ -175,11 +196,19 @@ export class AuthController {
         }
     }
 
-    @Get('email-validation')
+    // @Get('email-validation')
+    // @HttpCode(HttpStatus.OK)
+    // @ApiOkResponse({ type: ResponseDto })
+    // @ApiOperation({ summary: 'Check if email is already taken' })
+    // checkExistingEmail(@Query() dto: ValidateEmailDto) {
+    //     return this.usersService.checkExistingEmail(dto.email);
+    // }
+
+    @Get('identifier-validation')
     @HttpCode(HttpStatus.OK)
     @ApiOkResponse({ type: ResponseDto })
-    @ApiOperation({ summary: 'Check if email is already taken' })
-    checkExistingEmail(@Query() dto: ValidateEmailDto) {
-        return this.usersService.checkExistingEmail(dto.email);
+    @ApiOperation({ summary: 'Check if identifier is already taken' })
+    checkExistingEmail(@Query('identifier') dto: number) {
+        return this.usersService.checkExistingIdentifier(dto);
     }
 }

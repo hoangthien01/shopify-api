@@ -1,4 +1,6 @@
+export * from './blood-group.enum';
 export * from './email-template.enum';
+export * from './gender.enum';
 export * from './language-code.enum';
 export * from './order.enum';
 export * from './register-method.enum';

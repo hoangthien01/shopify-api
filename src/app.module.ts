@@ -9,6 +9,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ApiConfigService } from './shared/services/api-config.service';
 import { SharedModule } from './shared/shared.module';
+import {CategoryModule} from "./modules/category/category.module";
+import {ProductModule} from "./modules/products/product.module";
 
 @Module({
     imports: [
@@ -23,6 +25,8 @@ import { SharedModule } from './shared/shared.module';
         }),
         AuthModule,
         UsersModule,
+        CategoryModule,
+        ProductModule,
         ScheduleModule.forRoot()
     ],
     providers: []

@@ -6,6 +6,7 @@ import { UserRole } from '../../constants';
 import { Auth, AuthUser } from '../../decorators';
 import { CreateSubscriptionDto, GetFilterUserDto, UserDto } from './dto';
 import { ChangePasswordDto } from './dto/request/change-password.dto';
+import { UpdateUserDto } from './dto/request/update-user.dto';
 import { User } from './entities';
 import { UsersService } from './users.service';
 @Controller('users')
@@ -14,7 +15,7 @@ export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
     @Get()
-    @Auth([UserRole.ADMIN])
+    @Auth([UserRole.ADMIN, UserRole.HOSPITAL, UserRole.COUNCIL, UserRole.EMPLOYEE])
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Filter users' })
     @ApiOkResponse({ type: UserDto })
@@ -22,8 +23,18 @@ export class UsersController {
         return this.usersService.filterUsers(dto);
     }
 
+    @Get('current')
+    @Auth([UserRole.ADMIN, UserRole.USER])
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'get current users' })
+    @ApiOkResponse({ type: UserDto })
+    async getCurrentUser(@AuthUser() user: User) {
+        const userResult = await this.usersService.getUserById(user.id);
+
+        return userResult.toResponseDto();
+    }
+
     @Get(':id')
-    @Auth([UserRole.ADMIN])
     @HttpCode(HttpStatus.OK)
     @ApiOkResponse({
         description: 'Get user by id',
@@ -34,6 +45,17 @@ export class UsersController {
         const user = await this.usersService.getUserById(id);
 
         return user.toResponseDto({ isShowGeography: true });
+    }
+
+    @Patch(':id')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({
+        type: ResponseDto,
+        description: 'update user successfully'
+    })
+    @ApiOperation({ summary: 'update user' })
+    updateUserById(@Param('id') id: string, @Body() user: UpdateUserDto) {
+        return this.usersService.updateUserById(id, user);
     }
 
     @Patch('subscription')
