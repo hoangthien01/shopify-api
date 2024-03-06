@@ -2,7 +2,7 @@ import { PageOptionsDto } from '../../../../common/dto';
 import { Order } from '../../../../constants';
 import { DateFieldOptional, EnumFieldOptional } from '../../../../decorators';
 
-export class GetFilterUserDto extends PageOptionsDto {
+export class GetFilterProductDto extends PageOptionsDto {
     @DateFieldOptional()
     startDate?: Date;
 

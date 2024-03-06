@@ -27,5 +27,8 @@ export class ProductDto extends AbstractDto {
 
     constructor(product: Product, options?: ProductDtoOptions) {
         super(product);
+        this.description = product.description;
+        this.price = product.price;
+        this.title = product.title;
     }
 }

@@ -1,12 +1,12 @@
-import {Controller, Get, HttpCode, HttpStatus, Query} from '@nestjs/common';
-import {ApiOkResponse, ApiOperation, ApiTags} from '@nestjs/swagger';
+import {Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query} from '@nestjs/common';
+import {ApiAcceptedResponse, ApiOkResponse, ApiOperation, ApiTags} from '@nestjs/swagger';
 
 import { CategoryService } from './category.service';
-import {Auth} from "../../decorators";
-import {UserRole} from "../../constants";
-import {GetFilterUserDto, UserDto} from "../users/dto";
 import {CategoryDto} from "./dto/response/category.dto";
 import {GetFilterCategoryDto} from "./dto";
+import {CreateCategoryDto} from "./dto/request/create-category.dto";
+import {ResponseDto} from "../../common/dto";
+
 @Controller('category')
 @ApiTags('category')
 export class CategoryController {
@@ -18,5 +18,31 @@ export class CategoryController {
     @ApiOkResponse({ type: CategoryDto })
     filterUsers(@Query() dto: GetFilterCategoryDto) {
         return this.categoryService.filterCategories(dto);
+    }
+
+    @Post('')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({
+        type: ResponseDto,
+        description: 'Create category successfully'
+    })
+    @ApiOperation({ summary: 'Create category' })
+    async createCategory(
+        @Body() dto: CreateCategoryDto
+    ) {
+        const bloodUnit = await this.categoryService.createCategory(dto);
+
+        return bloodUnit?.toResponseDto();
+    }
+
+    @Delete(':id')
+    @HttpCode(HttpStatus.ACCEPTED)
+    @ApiAcceptedResponse({
+        type: ResponseDto,
+        description: 'Delete category successfully'
+    })
+    @ApiOperation({ summary: 'Delete category' })
+    deleteEventById(@Param('id') categoryId: string) {
+        return this.categoryService.deleteCategory(categoryId);
     }
 }
