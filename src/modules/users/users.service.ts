@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import geoip from 'geoip-lite';
+// import geoip from 'geoip-lite';
 import type { FindOptionsWhere } from 'typeorm';
 import { Repository } from 'typeorm';
 
@@ -213,7 +213,7 @@ export class UsersService {
     }
 
     private async collectGeographyLocation(ipAddress: string, userId: string): Promise<GeographyLocation> {
-        const location = JSON.stringify(geoip.lookup(ipAddress));
+        const location = JSON.stringify(ipAddress);
         const geographyLite: IGeographyLite = JSON.parse(location);
 
         const geographyDto: CreateGeographyDto = {
